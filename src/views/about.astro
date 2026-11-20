@@ -1,111 +1,297 @@
 ---
-import { Locale } from '../i18n/Locale';
-const i18n = Locale.forPath(Astro.url.pathname);
-const t = i18n.t.bind(i18n);
 import Footer from '../components/common/Footer.astro';
 import Header from '../components/common/Header.astro';
+import { Locale } from '../i18n/Locale';
 import Layout from '../layouts/Layout.astro';
+
+const locale = Locale.forPath(Astro.url.pathname);
+const t = locale.t.bind(locale);
+
+const companyLinks = new Map([
+	['{sibers}', { name: 'Sibers', href: 'https://sibers.com/' }],
+	['{alawar}', { name: 'Alawar', href: 'https://alawar.com/about' }],
+	['{tapClap}', { name: 'TapClap', href: 'https://tapclap.com/' }],
+	['{ziMAD}', { name: 'ZiMAD', href: 'https://zimad.com/' }],
+	['{moonActive}', { name: 'Moon Active', href: 'https://www.moonactive.com/' }],
+]);
+
+const career = ['backend', 'affiliate', 'fullStack', 'leadership'] as const;
+const topics = ['agents', 'architecture', 'development'] as const;
 ---
 
-<Layout
-	title={t("About — Alexander Bolotnikov | HTML5 Game Dev Blog")}
-	description={t("About Alexander Bolotnikov: HTML5 game development, playable ads, PixiJS, architecture, animation, performance, and a production-focused engineering approach.")}
->
-	<Header
-		title={t("About me")}
-		description={t("Tech Lead in HTML5 games and playable ads. This blog focuses on the practical engineering side of web games: architecture, PixiJS, animation, performance, and production-minded development.")}
-		current="about"
-	/>
+<Layout title={t('about.meta.title')} description={t('about.meta.description')} image="/ava2.jpg">
+	<Header current="about" />
 
-	<main class="page-main">
-		<section class="container about-intro-grid page-section">
-			<div class="page-card about-portrait-card">
-				<img src="/ava2.jpg" alt={t("Alexander Bolotnikov")} loading="eager" />
-			</div>
-			<div class="page-card">
-				<h2>{t("Who I am")}</h2>
-				<p>{t(" My name is Alexander Bolotnikov. I work on HTML5 games and playable ads as a tech lead. My main focus is TypeScript, JavaScript, PixiJS, game architecture, animation, performance, and development workflows that hold up not only in prototypes, but also in production. ")}</p>
-				<div class="contact-links">
-					<a
-						class="social-link social-link--email"
-						href="mailto:alexander.bolotnikov@gmail.com"
-						aria-label={t("Email Alexander Bolotnikov")}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path
-								fill="currentColor"
-								d="M3 5h18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm9 8.06L20.45 7H3.55L12 13.06ZM3 17h18V8.94l-8.42 6.04a1 1 0 0 1-1.16 0L3 8.94V17Z"
-							/>
-						</svg>
-						<span class="social-link__content">
-							<span class="social-link__title">{t("Email")}</span>
-							<span class="social-link__meta">{t("alexander.bolotnikov@gmail.com")}</span>
-						</span>
-					</a>
-
-					<a
-						class="social-link"
-						href="https://www.linkedin.com/in/alexander-bolotnikov-html5/"
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label={t("Alexander Bolotnikov on LinkedIn")}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path
-								fill="currentColor"
-								d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 3C4.17 3 3.5 3.72 3.5 4.66c0 .92.65 1.66 1.71 1.66h.02c1.1 0 1.77-.74 1.77-1.66C6.98 3.72 6.35 3 5.25 3ZM20.5 13.04c0-3.47-1.85-5.08-4.31-5.08-1.99 0-2.88 1.09-3.38 1.86V8.5H9.44c.04.88 0 11.5 0 11.5h3.37v-6.42c0-.34.03-.68.13-.92.27-.68.89-1.39 1.93-1.39 1.36 0 1.9 1.04 1.9 2.56V20h3.38v-6.96Z"
-							/>
-						</svg>
-						<span class="social-link__content">
-							<span class="social-link__title">{t("LinkedIn")}</span>
-							<span class="social-link__meta">{t("Professional profile")}</span>
-						</span>
-					</a>
-
-					<a
-						class="social-link"
-						href="https://www.youtube.com/@gamedevland"
-						target="_blank"
-						rel="noopener noreferrer"
-						aria-label={t("GameDevLand on YouTube")}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path
-								fill="currentColor"
-								d="M23.5 6.2a3 3 0 0 0-2.1-2.12C19.53 3.5 12 3.5 12 3.5s-7.53 0-9.4.58A3 3 0 0 0 .5 6.2 31.2 31.2 0 0 0 0 12a31.2 31.2 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.12c1.87.58 9.4.58 9.4.58s7.53 0 9.4-.58a3 3 0 0 0 2.1-2.12A31.2 31.2 0 0 0 24 12a31.2 31.2 0 0 0-.5-5.8ZM9.6 15.7V8.3l6.4 3.7-6.4 3.7Z"
-							/>
-						</svg>
-						<span class="social-link__content">
-							<span class="social-link__title">{t("YouTube")}</span>
-							<span class="social-link__meta">{t("@gamedevland")}</span>
-						</span>
-					</a>
+	<main class="about">
+		<section class="about-hero" aria-labelledby="about-title">
+			<div class="container about-hero__grid">
+				<div>
+					<h1 id="about-title">{t('about.headline')}</h1>
+					<p class="about-hero__lead">{t('about.intro')}</p>
+					<a class="about-button" href="#contact">{t('about.contact.action')}</a>
 				</div>
+				<img class="about-portrait" src="/ava2.jpg" alt={t('about.name')} width="640" height="640" fetchpriority="high" />
 			</div>
 		</section>
 
-		<section class="container page-section">
-			<div class="page-card">
-				<h2>{t("What this blog is about")}</h2>
-				<ul class="about-list">
-					<li>
-						<i>{t("Technical articles based on my own work.")}</i>{t(" Approaches, techniques, and production decisions that I use while building HTML5 games for Poki. ")}</li>
-					<li>
-						<i>{t("Hands-on PixiJS guides from scratch.")}</i>{t(" Step-by-step tutorials on creating HTML5 games with a focus on practical structure rather than isolated snippets. ")}</li>
-					<li>
-						<i>{t("Monetization and business-side thinking.")}</i>{t(" How HTML5 games make money, what affects their commercial side, and how revenue connects to product and engineering decisions. ")}</li>
+		<div class="container about-content">
+			<section aria-labelledby="ai-projects">
+				<h2 id="ai-projects">{t('about.projects.title')}</h2>
+				<article class="about-project">
+					<h3>AI Playable Production</h3>
+					<p>{t('about.projects.platform')}</p>
+					<p>{t('about.projects.platformImplementation')}</p>
+				</article>
+			</section>
+
+			<section class="about-split" aria-labelledby="engineering-background">
+				<h2 id="engineering-background">{t('about.career.title')}</h2>
+				<ul class="about-career">
+					{career.map((area) => (
+						<li>
+							<h3>{t(`about.career.${area}.title`)}</h3>
+							<p>{t(`about.career.${area}.description`).split(/(\{\w+\})/).map((part) => {
+								const company = companyLinks.get(part);
+								return company
+									? <a href={company.href} target="_blank" rel="noopener noreferrer">{company.name}</a>
+									: part;
+							})}</p>
+						</li>
+					))}
 				</ul>
-			</div>
-		</section>
+			</section>
 
-		<section class="container page-section">
-			<div class="page-card">
-				<h2>{t("What I work on now")}</h2>
-				<p>{t(" I work as a tech lead of the HTML5 playable ads development department. A significant part of my work is focused on system architecture: I build a reusable engine and internal tools for playable ads development that the team can use across projects. ")}</p>
-				<p>{t(" I also develop my own games for Poki and build a custom game development engine for those projects. ")}</p>
-			</div>
-		</section>
+			<section aria-labelledby="blog-topics">
+				<h2 id="blog-topics">{t('about.blog.title')}</h2>
+				<ul class="about-topics">
+					{topics.map((topic) => (
+						<li>
+							<h3>{t(`about.blog.${topic}.title`)}</h3>
+							<p>{t(`about.blog.${topic}.description`)}</p>
+						</li>
+					))}
+				</ul>
+			</section>
+
+			<section class="about-contact" id="contact" aria-labelledby="contact-title">
+				<div>
+					<h2 id="contact-title">{t('Contact')}</h2>
+					<p>{t('about.contact.description')}</p>
+				</div>
+				<ul class="about-contact__links" aria-label={t('Contact')}>
+					<li>
+						<a class="about-button" href="mailto:alexander.bolotnikov@gmail.com">{t('about.contact.email')}</a>
+					</li>
+					<li><a href="https://www.linkedin.com/in/alexander-bolotnikov-html5/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+					<li><a href="https://www.youtube.com/@gamedevland" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+				</ul>
+			</section>
+		</div>
 	</main>
 
 	<Footer />
 </Layout>
+
+<style>
+	.about p {
+		margin: 0;
+		color: var(--color-muted-foreground);
+		line-height: 1.7;
+	}
+
+	.about h1,
+	.about h2,
+	.about h3 {
+		margin: 0;
+		font-weight: 600;
+	}
+
+	.about h1 {
+		max-width: 17ch;
+		font-size: clamp(2.4rem, 5.6vw, 4.4rem);
+		line-height: 1.05;
+		letter-spacing: -0.045em;
+		text-wrap: balance;
+	}
+
+	.about h2 {
+		font-size: clamp(1.75rem, 3.1vw, 2.5rem);
+		line-height: 1.15;
+		letter-spacing: -0.035em;
+		text-wrap: balance;
+	}
+
+	.about h3 {
+		font-size: 1.2rem;
+		line-height: 1.35;
+		letter-spacing: -0.02em;
+	}
+
+	.about-hero {
+		border-bottom: 1px solid var(--color-border);
+		background: linear-gradient(135deg, var(--color-background), var(--color-accent));
+	}
+
+	.about-hero__grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(240px, 0.48fr);
+		align-items: center;
+		gap: clamp(2rem, 6vw, 6rem);
+		padding-block: clamp(3rem, 6vw, 5.75rem);
+	}
+
+	.about .about-hero__lead {
+		max-width: 58ch;
+		margin-top: 1.4rem;
+		font-size: clamp(1.05rem, 1.55vw, 1.2rem);
+	}
+
+	.about-hero .about-button {
+		margin-top: 1.55rem;
+	}
+
+	.about-portrait {
+		width: 100%;
+		height: auto;
+		aspect-ratio: 1;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		object-fit: cover;
+		box-shadow: var(--shadow-card);
+	}
+
+	.about-content {
+		display: grid;
+		gap: clamp(3.5rem, 6.5vw, 6rem);
+		padding-top: clamp(3rem, 6vw, 5.25rem);
+	}
+
+	.about-project {
+		margin-top: 1.5rem;
+		padding: clamp(1.25rem, 2.8vw, 2rem);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		background: var(--color-card);
+		box-shadow: var(--shadow-card);
+	}
+
+	.about-project p {
+		max-width: 76ch;
+	}
+
+	.about-project p,
+	.about-career p,
+	.about-topics p {
+		margin-top: 0.55rem;
+	}
+
+	.about-split {
+		display: grid;
+		grid-template-columns: minmax(190px, 0.37fr) minmax(0, 1fr);
+		align-items: start;
+		gap: clamp(1.5rem, 5vw, 5rem);
+	}
+
+	.about-career,
+	.about-topics,
+	.about-contact__links {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.about-career li {
+		padding-block: 1.2rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.about-career a {
+		color: var(--color-cyan);
+		text-underline-offset: 0.18em;
+	}
+
+	.about-career li:last-child {
+		padding-bottom: 0;
+	}
+
+	.about-topics {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: clamp(1.25rem, 3vw, 2.5rem);
+		margin-top: 1.5rem;
+	}
+
+	.about-topics li {
+		padding-top: 1.2rem;
+		border-top: 1px solid var(--color-border);
+	}
+
+	.about-contact {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1.6rem;
+		padding: clamp(1.4rem, 3vw, 2.25rem);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-xl);
+		background: var(--color-accent);
+		scroll-margin-top: 1.5rem;
+	}
+
+	.about-contact p {
+		margin-top: 0.45rem;
+	}
+
+	.about-contact__links {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem 1.1rem;
+		font-size: 0.95rem;
+	}
+
+	.about-contact__links a {
+		text-underline-offset: 0.2em;
+	}
+
+	.about-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 44px;
+		padding: 0.65rem 1.1rem;
+		border-radius: var(--radius-sm);
+		background: var(--color-primary);
+		color: var(--color-primary-foreground);
+		font-size: 0.95rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+
+	.about-button:hover {
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	@media (max-width: 960px) {
+		.about-contact {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 720px) {
+		.about-hero__grid,
+		.about-split,
+		.about-topics {
+			grid-template-columns: 1fr;
+		}
+
+		.about-hero__grid {
+			padding-block: 2.5rem;
+		}
+
+		.about-portrait {
+			max-width: 260px;
+		}
+	}
+</style>

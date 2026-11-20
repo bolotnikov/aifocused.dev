@@ -33,15 +33,17 @@ jobs:
           test -f dist/about/index.html
           test -f dist/ru/index.html
           test -f dist/ru/about/index.html
+          test -f dist/articles/tool-calling/index.html
+          test -f dist/ru/articles/tool-calling/index.html
           test -f dist/.nojekyll
           grep -Fxq 'aifocused.dev' dist/CNAME
       - uses: actions/upload-pages-artifact@v5
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         with:
           path: dist
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     permissions:

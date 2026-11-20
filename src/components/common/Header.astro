@@ -6,7 +6,7 @@ const t = i18n.t.bind(i18n);
 interface Props {
 	title?: string;
 	description?: string;
-	current?: 'home' | 'about';
+	current?: 'home' | 'about' | 'article';
 }
 
 const { title, description, current = 'home' } = Astro.props;
@@ -15,12 +15,12 @@ const { title, description, current = 'home' } = Astro.props;
 <header class="site-header">
 	<div class="container">
 		<nav class="top-nav" aria-label={t("Main navigation")}>
-			<a class="brand-pill" href={i18n.path("/")}>{t("AIFocused.dev")}</a>
+			<a class="brand-wordmark" href={i18n.path("/")}>AIFocused<span>.dev</span></a>
 			<div class="top-nav__links">
-				<a class:list={['top-nav__link', current === 'home' && 'is-active']} href={i18n.path("/")}>{t("Home")}</a>
-				<a class:list={['top-nav__link', current === 'about' && 'is-active']} href={i18n.path("/about/")}>{t("About")}</a>
+				<a class:list={['top-nav__link', current === 'home' && 'is-active']} href={i18n.path("/")} aria-current={current === 'home' ? 'page' : undefined}>{t("Home")}</a>
+				<a class:list={['top-nav__link', current === 'about' && 'is-active']} href={i18n.path("/about/")} aria-current={current === 'about' ? 'page' : undefined}>{t("About")}</a>
 			</div>
-			<div class="top-nav__controls"><LanguageSwitcher/><button class="theme-toggle" type="button" aria-label={t("Switch color theme")} data-theme-toggle data-theme-light-label={t("Включить светлую тему")} data-theme-dark-label={t("Включить тёмную тему")}>
+			<div class="top-nav__controls">{Astro.locals.availableLocales?.length !== 1 && <LanguageSwitcher />}<button class="theme-toggle" type="button" aria-label={t("Switch color theme")} data-theme-toggle data-theme-light-label={t("Включить светлую тему")} data-theme-dark-label={t("Включить тёмную тему")}>
 				<svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
 				<svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M20.8 13a9 9 0 0 1-9.8-9.8A9 9 0 1 0 20.8 13Z"/></svg>
 			</button></div>

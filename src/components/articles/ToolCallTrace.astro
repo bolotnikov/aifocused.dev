@@ -1,0 +1,342 @@
+---
+import { Locale } from '../../i18n/Locale';
+
+const locale = Locale.forPath(Astro.url.pathname);
+const message = (key: string, values?: Record<string, number>) => locale.t(`article.toolCalling.${key}`, values);
+const steps = [
+	{ route: 'upload', messageKey: 'step.prepare' },
+	{ route: 'prompt', messageKey: 'step.prompt' },
+	{ route: 'call', messageKey: 'step.call' },
+	{ route: 'result', messageKey: 'step.result' },
+	{ route: 'call', messageKey: 'step.continue' },
+	{ route: 'document', messageKey: 'step.document' },
+];
+---
+
+<figure class="tool-flow" data-tool-trace aria-label={message('label')}>
+	<div class="tool-flow__diagram">
+		<div class="tool-flow__node tool-flow__input">
+			<strong>{message('video')}</strong>
+			<span>{message('duration')}</span>
+		</div>
+		<div class="tool-flow__vertical tool-flow__upload" data-flow-part="upload" aria-hidden="true"><span></span></div>
+
+		<div class="tool-flow__node tool-flow__app" data-flow-part="upload prompt result" data-active>
+			<strong>Node.js</strong>
+			<span>{message('prepare')}</span>
+		</div>
+
+		<div class="tool-flow__links">
+			<div class="tool-flow__link" data-flow-part="prompt">
+				<span>{message('prompt')}</span>
+				<i class="tool-flow__arrow" aria-hidden="true"></i>
+			</div>
+			<div class="tool-flow__link" data-flow-part="call">
+				<code>function_call</code>
+				<i class="tool-flow__arrow tool-flow__arrow--back" aria-hidden="true"></i>
+			</div>
+			<div class="tool-flow__link" data-flow-part="result">
+				<span>{message('frames')}</span>
+				<i class="tool-flow__arrow" aria-hidden="true"></i>
+			</div>
+		</div>
+
+		<div class="tool-flow__node tool-flow__model" data-flow-part="call document">
+			<strong>{message('model')}</strong>
+			<span>{message('analyze')}</span>
+		</div>
+		<div class="tool-flow__vertical tool-flow__finish" data-flow-part="document" aria-hidden="true"><span></span></div>
+		<div class="tool-flow__node tool-flow__output">
+			<strong>{message('document')}</strong>
+			<span>{message('contents')}</span>
+		</div>
+	</div>
+
+	<figcaption class="tool-flow__player" data-trace-controls hidden>
+		<div class="tool-flow__buttons" role="group" aria-label={message('controls')}>
+			<button type="button" data-trace-back aria-label={message('previous')} title={message('previous')} disabled>
+				<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M5 4v12m10-12L7 10l8 6z"/></svg>
+			</button>
+			<button type="button" data-trace-next aria-label={message('next')} title={message('next')}>
+				<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M15 4v12M5 4l8 6-8 6z"/></svg>
+			</button>
+		</div>
+		<div class="tool-flow__status" aria-live="polite">
+			{steps.map(({ messageKey, route }, index) => (
+				<div data-trace-step={route} hidden={index !== 0}>
+					<span class="tool-flow__counter">{message('counter', { current: index + 1, total: steps.length })}</span>
+					<p>{message(messageKey)}</p>
+				</div>
+			))}
+		</div>
+	</figcaption>
+</figure>
+
+<script>
+	import { ToolCallTrace } from '../../scripts/ToolCallTrace';
+	document.querySelectorAll<HTMLElement>('[data-tool-trace]').forEach((root) => new ToolCallTrace(root));
+</script>
+
+<style>
+	.tool-flow {
+		container-type: inline-size;
+		margin: 1.4rem 0 1.6rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		background: var(--color-card);
+	}
+
+	.tool-flow__diagram {
+		--arrow-color: var(--color-muted-foreground);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(9.5rem, 0.9fr) minmax(0, 1fr);
+		grid-template-areas:
+			'input . .'
+			'upload . .'
+			'app links model'
+			'. . finish'
+			'. . output';
+		column-gap: clamp(0.65rem, 1.9vw, 1.1rem);
+		align-items: center;
+		padding: clamp(1rem, 3vw, 1.75rem);
+	}
+
+	.tool-flow__input { grid-area: input; }
+	.tool-flow__upload { grid-area: upload; }
+	.tool-flow__app { grid-area: app; }
+	.tool-flow__links { grid-area: links; }
+	.tool-flow__model { grid-area: model; }
+	.tool-flow__finish { grid-area: finish; }
+	.tool-flow__output { grid-area: output; }
+
+	.tool-flow__node {
+		display: grid;
+		gap: 0.22rem;
+		padding: 0.78rem 0.85rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-background);
+		text-align: center;
+	}
+
+	.tool-flow__app,
+	.tool-flow__model {
+		padding-block: 1.25rem;
+	}
+
+	.tool-flow__node strong {
+		font-size: 0.98rem;
+		line-height: 1.3;
+	}
+
+	.tool-flow__node span {
+		color: var(--color-muted-foreground);
+		font-size: 0.8rem;
+		line-height: 1.35;
+	}
+
+	.tool-flow__node[data-active] {
+		border-color: var(--color-primary);
+		background: var(--color-accent);
+		box-shadow: inset 0 0 0 1px var(--color-primary);
+	}
+
+	.tool-flow__node[data-active] strong {
+		color: var(--color-primary);
+	}
+
+	.tool-flow [data-active] {
+		--arrow-color: var(--color-primary);
+	}
+
+	.tool-flow__links {
+		display: grid;
+		gap: 0.7rem;
+	}
+
+	.tool-flow__link {
+		display: grid;
+		gap: 0.32rem;
+		color: var(--arrow-color);
+		font-size: 0.78rem;
+		line-height: 1.3;
+		text-align: center;
+	}
+
+	.tool-flow__link[data-active] {
+		font-weight: 700;
+	}
+
+	.tool-flow__arrow,
+	.tool-flow__vertical > span {
+		position: relative;
+		display: block;
+		background: var(--arrow-color);
+	}
+
+	.tool-flow__arrow {
+		height: 1px;
+		margin-inline: 2px 4px;
+	}
+
+	.tool-flow__arrow::after,
+	.tool-flow__vertical > span::after {
+		position: absolute;
+		content: '';
+		width: 7px;
+		height: 7px;
+		border: solid var(--arrow-color);
+		border-width: 1px 1px 0 0;
+	}
+
+	.tool-flow__arrow::after {
+		top: 50%;
+		right: 0;
+		transform: translateY(-50%) rotate(45deg);
+		transform-origin: right center;
+	}
+
+	.tool-flow__arrow--back {
+		transform: scaleX(-1);
+	}
+
+	.tool-flow__vertical {
+		height: 1.6rem;
+		justify-self: center;
+	}
+
+	.tool-flow__vertical > span {
+		width: 1px;
+		height: 100%;
+	}
+
+	.tool-flow__vertical > span::after {
+		bottom: 2px;
+		left: 50%;
+		transform: translateX(-50%) rotate(135deg);
+	}
+
+	.tool-flow__link[data-active] .tool-flow__arrow {
+		height: 2px;
+	}
+
+	.tool-flow__vertical[data-active] > span {
+		width: 2px;
+	}
+
+	.tool-flow [hidden] {
+		display: none;
+	}
+
+	.tool-flow__player {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.85rem clamp(1rem, 3vw, 1.75rem);
+		border-top: 1px solid var(--color-border);
+		background: var(--color-background);
+		border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+	}
+
+	.tool-flow__buttons {
+		display: flex;
+		gap: 0.35rem;
+	}
+
+	.tool-flow__buttons button {
+		display: grid;
+		place-items: center;
+		width: 44px;
+		height: 44px;
+		padding: 0;
+		border: 1px solid var(--color-border);
+		border-radius: 9px;
+		background: var(--color-card);
+		color: var(--color-foreground);
+		cursor: pointer;
+	}
+
+	.tool-flow__buttons button:hover:enabled {
+		border-color: var(--color-primary);
+	}
+
+	.tool-flow__buttons button:disabled {
+		opacity: 0.42;
+		cursor: default;
+	}
+
+	.tool-flow__buttons svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.6;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
+
+	.tool-flow__counter {
+		color: var(--color-muted-foreground);
+		font-size: 0.75rem;
+	}
+
+	.tool-flow__status {
+		min-height: 4.25rem;
+	}
+
+	.tool-flow__status p {
+		margin: 0;
+		color: var(--color-foreground);
+		font-size: 0.9rem;
+		line-height: 1.45;
+	}
+
+	@container (max-width: 515px) {
+		.tool-flow__diagram {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas: 'input' 'upload' 'app' 'links' 'model' 'finish' 'output';
+		}
+
+		.tool-flow__links {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: 0.3rem;
+		}
+
+		.tool-flow__link {
+			grid-template-rows: 1.65rem auto;
+			gap: 0;
+			justify-items: center;
+			padding-bottom: 0.5rem;
+			font-size: 0.72rem;
+		}
+
+		.tool-flow__link > :is(span, code) {
+			grid-row: 2;
+		}
+
+		.tool-flow__arrow {
+			grid-row: 1;
+			align-self: center;
+			width: 1.25rem;
+			margin: 0;
+			transform: rotate(90deg);
+		}
+
+		.tool-flow__arrow--back {
+			transform: rotate(-90deg);
+		}
+
+		.tool-flow__app,
+		.tool-flow__model {
+			padding-block: 0.75rem;
+		}
+
+		.tool-flow__player {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.55rem;
+		}
+
+		.tool-flow__status {
+			min-height: 5rem;
+		}
+	}
+</style>

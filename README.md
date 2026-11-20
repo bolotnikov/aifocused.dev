@@ -32,11 +32,9 @@ The language selector links to the corresponding published version when it exist
 
 ## GitHub Pages
 
-The build produces `dist/`. Pushes and pull requests for `main` run checks and build
-the site. Deployment runs only when **Build and deploy GitHub Pages** is started manually
-from `main`.
+The build produces `dist/`. Pull requests targeting `main` run checks and build the
+site. Pushes to `main` also publish the build through GitHub Pages. To redeploy
+`main` manually, run **Build and deploy GitHub Pages** from the Actions tab.
 
-When ready to publish, push `main`, select **GitHub Actions** as the source in the
-repository's Pages settings, and configure `aifocused.dev` as the custom domain with
-the corresponding DNS records. Then run the workflow. The Astro site URL and
-`public/CNAME` are already set to `aifocused.dev`.
+The Pages source is **GitHub Actions**. The custom domain and Astro site URL are
+`https://aifocused.dev`. Cloudflare manages the DNS records for the domain.

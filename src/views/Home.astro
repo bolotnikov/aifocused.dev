@@ -18,31 +18,37 @@ const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long',
 <Layout>
 	<Header />
 	<main class="page-main page-main--home">
-		{articles.length > 0 && (
-			<section class="container" aria-labelledby="articles-title">
-				<h1 id="articles-title">{t('Articles')}</h1>
-				<div class="cards-grid">
-					{articles.map(({ data }) => (
-						<article class="article-card">
-							<a class="article-card__link" href={i18n.path(`/articles/${data.translationKey}/`)}>
-								<div class="article-card__media">
-									{data.cover
-										? <img src={data.cover.src} alt={data.cover.alt} loading="lazy" />
-										: <div class="article-card__media-fallback"></div>}
-								</div>
-								<div class="article-card__body">
-									<div class="article-card__meta">
-										<time datetime={data.pubDate.toISOString().slice(0, 10)}>{dateFormat.format(data.pubDate)}</time>
+		<div class="container">
+			<header class="home-intro">
+				<h1>{t('home.title')}</h1>
+				<p>{t('home.description')}</p>
+			</header>
+			{articles.length > 0 && (
+				<div class="article-list" id="articles-title">
+					{articles.map(({ data }) => {
+						const preview = data.preview ?? data.cover;
+						const titleId = `article-${data.translationKey}-title`;
+						return (
+							<article class="article-card">
+								<a class="article-card__link" href={i18n.path(`/articles/${data.translationKey}/`)} aria-labelledby={titleId}>
+									<div class="article-card__body">
+										<time class="article-card__date" datetime={data.pubDate.toISOString().slice(0, 10)}>{dateFormat.format(data.pubDate)}</time>
+										<h2 id={titleId}>{data.cardTitle ?? data.title}</h2>
+										<p>{data.description}</p>
+										<span class="article-card__action" aria-hidden="true">{t('home.readArticle')}</span>
 									</div>
-									<h2>{data.title}</h2>
-									<p>{data.description}</p>
-								</div>
-							</a>
-						</article>
-					))}
+									{preview && (
+										<div class="article-card__media">
+											<img src={preview.src} alt={preview.alt} decoding="async" />
+										</div>
+									)}
+								</a>
+							</article>
+						);
+					})}
 				</div>
-			</section>
-		)}
+			)}
+		</div>
 	</main>
 	<Footer />
 </Layout>

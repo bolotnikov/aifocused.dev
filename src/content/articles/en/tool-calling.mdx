@@ -1,0 +1,136 @@
+---
+locale: en
+translationKey: tool-calling
+title: "Tool calling"
+subtitle: "The model requests a function call. The application validates the arguments, runs the function, and returns the result."
+description: "Why models need tools and how to connect them to your application."
+pubDate: 2026-11-20
+draft: false
+cover:
+  src: /images/articles/tool-calling-cover.webp
+  alt: "An LLM requests a function call from a Node.js application, which sends the result back."
+preview:
+  src: /images/articles/tool-calling-preview.webp
+  alt: "A Node.js application and an LLM exchange a function call and its result."
+---
+
+import ToolCallTrace from '../../../components/articles/ToolCallTrace.astro';
+
+<section class="article-task">
+
+## The task
+
+I upload a three-minute MP4 recording of gameplay to **AI Playable Production**. I want a game design document that describes what the player does, which rules are visible in the recording, how the interface changes, and when the game moves from one state to another.
+
+</section>
+
+## How it works
+
+1. **The application prepares the frames.** Node.js runs FFmpeg and takes one frame per second. A three-minute video yields 180 images with timestamps. A brief action between two sampled frames can be missed. [FFmpeg — fps filter](https://ffmpeg.org/ffmpeg-filters.html#fps)
+2. **The model requests frames in batches.** Node.js sends the task and the definition of `get_video_frames` through the [OpenAI Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create). The model requests frames 0 through 11, and the application sends back the images and their timestamps. The next batch starts at frame 12.
+3. **The model writes the document.** Node.js starts a separate conversation for each minute of footage and collects observations about that segment. The final request passes the written observations from the whole recording to the model, which turns them into one game design document.
+
+<ToolCallTrace />
+
+**This is tool calling.** The model asks to run `get_video_frames`, and Node.js runs it and sends the result back to the model. [OpenAI — the tool calling flow](https://developers.openai.com/api/docs/guides/function-calling#the-tool-calling-flow)
+
+## The first request to the model
+
+<aside class="article-term" aria-labelledby="responses-api-term">
+
+<span class="article-term__label">Term</span>
+
+<h3 id="responses-api-term">OpenAI Responses API</h3>
+
+This is the API the application uses to talk to an OpenAI model. We create `client` with `new OpenAI()` from the official `openai` package for Node.js. By default, the SDK reads the key from `OPENAI_API_KEY`. The `client.responses.create()` method sends a `POST /v1/responses` HTTP request. [OpenAI Node.js package](https://github.com/openai/openai-node#usage) · [API reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
+
+</aside>
+
+`input` contains the task, `instructions` specifies the frame range and batch size, and `tools` describes the function. The `model` variable holds the model ID. The `getVideoFrames` definition follows below.
+
+```ts
+import OpenAI from 'openai';
+
+const client = new OpenAI();
+const response = await client.responses.create({
+	model,
+	input: 'Analyze the gameplay recording and write a game design document.',
+	instructions: '180 frames are available. Analyze frames 0–59 in batches of 12.',
+	tools: [getVideoFrames],
+});
+```
+
+## Function arguments
+
+The OpenAI Responses API defines the shape of a tool definition. The object in the `tools` array contains `type`, `name`, `description`, `strict`, and `parameters`. We use JSON Schema inside `parameters` to define our function’s arguments, `fromFrame` and `count`. [OpenAI — defining functions](https://developers.openai.com/api/docs/guides/function-calling#defining-functions)
+
+```ts
+const getVideoFrames = {
+	type: 'function',
+	name: 'get_video_frames',
+	description: 'Read consecutive frames from a 1 FPS sample of the uploaded video. Returns JPEG images and timestamps.',
+	strict: true,
+	parameters: {
+		type: 'object',
+		properties: {
+			fromFrame: { type: 'integer', minimum: 0 },
+			count: { type: 'integer', minimum: 1, maximum: 12 },
+		},
+		required: ['fromFrame', 'count'],
+		additionalProperties: false,
+	},
+} satisfies OpenAI.Responses.FunctionTool;
+```
+
+`fromFrame` is the zero-based index of the first frame in the sample, and `count` is the number of consecutive frames to read. For example, `{ fromFrame: 12, count: 12 }` requests frames from `00:12` through `00:23`. The application processes one video at a time, so the function can work with just these two arguments.
+
+`strict: true` requires the arguments to match the schema. Before reading any frames, Node.js also checks that the requested index falls within the current segment.
+
+## Matching a call to its result
+
+In the first API response, the model can return an item like this in `response.output`. The IDs here are illustrative.
+
+```json
+{
+  "type": "function_call",
+  "name": "get_video_frames",
+  "call_id": "call_first",
+  "arguments": "{\"fromFrame\":0,\"count\":12}"
+}
+```
+
+`arguments` is a JSON string. The `execute` function parses it, validates the arguments, and reads the JPEG files. On success, it returns each timestamp (`input_text`) followed by its corresponding image (`input_image`). Here, `call` is the `function_call` item from `response.output`, and `options` holds the request settings, including `model`, `instructions`, and `tools`.
+
+```ts
+const output = execute(call, frames, delivered, start, end);
+const next = await client.responses.create({
+	...options,
+	previous_response_id: response.id,
+	input: [{
+		type: 'function_call_output',
+		call_id: call.call_id,
+		output,
+	}],
+});
+```
+
+- **`call_id`** matches the result to a specific function call. Copy it from `function_call` into `function_call_output`.
+- **`previous_response_id`** refers to the preceding API response. Use `response.id` to continue the same conversation.
+
+The next response may contain another `function_call`. When the model returns written observations for the segment, the application moves on to the next one. We send `instructions` and `tools` again with each request in the conversation. `previous_response_id` links the requests, while `instructions` apply only to the request that includes them. [OpenAI — handling function calls](https://developers.openai.com/api/docs/guides/function-calling#handling-function-calls) · [Conversation state](https://developers.openai.com/api/docs/guides/conversation-state)
+
+### Sources
+
+- [OpenAI — Function calling](https://developers.openai.com/api/docs/guides/function-calling)
+- [OpenAI — Images in the Responses API](https://developers.openai.com/api/docs/guides/images-vision#analyze-images)
+- [OpenAI Node SDK — Responses API types](https://github.com/openai/openai-node/blob/main/src/resources/responses/responses.ts)
+
+<section class="article-takeaway">
+
+## Takeaways
+
+1. The model requests frames.
+2. Node.js runs the requested function.
+3. The model writes the game design document.
+
+</section>

@@ -1,0 +1,136 @@
+---
+locale: ru
+translationKey: tool-calling
+title: "Tool calling"
+subtitle: "Модель запрашивает вызов функции. Приложение проверяет аргументы, выполняет функцию и возвращает результат."
+description: "Зачем модели нужны инструменты и как подключить их к приложению."
+pubDate: 2026-11-20
+draft: false
+cover:
+  src: /images/articles/tool-calling-cover.webp
+  alt: "LLM отправляет запрос на вызов функции приложению Node.js. Приложение возвращает результат модели."
+preview:
+  src: /images/articles/tool-calling-preview.webp
+  alt: "Приложение Node.js и LLM обмениваются запросом на вызов функции и результатом."
+---
+
+import ToolCallTrace from '../../../components/articles/ToolCallTrace.astro';
+
+<section class="article-task">
+
+## Задача
+
+Я загружаю в **AI Playable Production** трёхминутную запись геймплея в MP4. На выходе хочу получить геймдизайн-документ с описанием того, что делает игрок, какие правила видны на записи, как меняется интерфейс и когда игра переходит из одного состояния в другое.
+
+</section>
+
+## Как это работает
+
+1. **Приложение готовит кадры.** Node.js запускает FFmpeg и берёт по одному кадру в секунду. Из трёхминутного видео получается 180 изображений с таймкодами. Короткое действие между двумя кадрами может остаться за пределами выборки. [FFmpeg — фильтр fps](https://ffmpeg.org/ffmpeg-filters.html#fps)
+2. **Модель запрашивает кадры порциями.** Node.js отправляет задачу и описание функции `get_video_frames` через [OpenAI Responses API](https://developers.openai.com/api/reference/resources/responses/methods/create). Модель запрашивает кадры с 0 по 11, а приложение возвращает изображения с таймкодами. Следующая порция начинается с кадра 12.
+3. **Модель составляет документ.** Для каждой минуты записи Node.js начинает отдельный диалог и получает наблюдения по этому отрезку. В последний запрос идут текстовые наблюдения по всей записи. Из них модель собирает один геймдизайн-документ.
+
+<ToolCallTrace />
+
+**В этом и состоит tool calling.** Модель запрашивает вызов `get_video_frames`, Node.js выполняет его и отправляет результат обратно модели. [OpenAI — цикл вызова функций](https://developers.openai.com/api/docs/guides/function-calling#the-tool-calling-flow)
+
+## Первый запрос к модели
+
+<aside class="article-term" aria-labelledby="responses-api-term">
+
+<span class="article-term__label">Термин</span>
+
+<h3 id="responses-api-term">OpenAI Responses API</h3>
+
+Это API, через которое приложение обращается к модели OpenAI. `client` создаём с помощью `new OpenAI()` из официального пакета `openai` для Node.js. По умолчанию SDK берёт ключ из `OPENAI_API_KEY`. Метод `client.responses.create()` отправляет HTTP-запрос `POST /v1/responses`. [Пакет openai](https://github.com/openai/openai-node#usage) · [Документация метода](https://developers.openai.com/api/reference/resources/responses/methods/create)
+
+</aside>
+
+В `input` передаём текст задачи, в `instructions` — диапазон и размер порции, в `tools` — описание функции. Переменная `model` содержит ID модели, а объект `getVideoFrames` описан ниже.
+
+```ts
+import OpenAI from 'openai';
+
+const client = new OpenAI();
+const response = await client.responses.create({
+	model,
+	input: 'Разбери запись геймплея и составь геймдизайн-документ.',
+	instructions: 'Для анализа подготовлено 180 кадров. Разбери кадры 0–59 по 12 за вызов.',
+	tools: [getVideoFrames],
+});
+```
+
+## Аргументы функции
+
+Формат описания инструмента задаёт OpenAI Responses API. Объект в массиве `tools` содержит поля `type`, `name`, `description`, `strict` и `parameters`. Внутри `parameters` мы сами описываем аргументы нашей функции по правилам JSON Schema. Здесь это `fromFrame` и `count`. [OpenAI — описание функций](https://developers.openai.com/api/docs/guides/function-calling#defining-functions)
+
+```ts
+const getVideoFrames = {
+	type: 'function',
+	name: 'get_video_frames',
+	description: 'Read consecutive frames from a 1 FPS sample of the uploaded video. Returns JPEG images and timestamps.',
+	strict: true,
+	parameters: {
+		type: 'object',
+		properties: {
+			fromFrame: { type: 'integer', minimum: 0 },
+			count: { type: 'integer', minimum: 1, maximum: 12 },
+		},
+		required: ['fromFrame', 'count'],
+		additionalProperties: false,
+	},
+} satisfies OpenAI.Responses.FunctionTool;
+```
+
+`fromFrame` — индекс первого кадра в подготовленной выборке, `count` — сколько кадров прочитать подряд. Например, `{ fromFrame: 12, count: 12 }` запрашивает кадры с `00:12` по `00:23`. В этом примере приложение работает с одним видео, поэтому идентификатор файла в аргументах не нужен.
+
+`strict: true` требует, чтобы аргументы соответствовали схеме. Перед чтением кадров Node.js дополнительно проверяет, что запрошенный индекс входит в текущий отрезок видео.
+
+## Как связать вызов с результатом
+
+В первом ответе API модель может вернуть такой элемент в `response.output`. Идентификаторы в примере условные.
+
+```json
+{
+  "type": "function_call",
+  "name": "get_video_frames",
+  "call_id": "call_first",
+  "arguments": "{\"fromFrame\":0,\"count\":12}"
+}
+```
+
+`arguments` приходит строкой с JSON. Функция `execute` разбирает её, проверяет аргументы и читает JPEG-файлы. При успешном вызове она возвращает пары из таймкода (`input_text`) и изображения (`input_image`). В примере ниже `call` — элемент `function_call` из `response.output`, а `options` содержит настройки запроса, включая `model`, `instructions` и `tools`.
+
+```ts
+const output = execute(call, frames, delivered, start, end);
+const next = await client.responses.create({
+	...options,
+	previous_response_id: response.id,
+	input: [{
+		type: 'function_call_output',
+		call_id: call.call_id,
+		output,
+	}],
+});
+```
+
+- **`call_id`** связывает результат с конкретным вызовом функции. В `function_call_output` копирую его из `function_call`.
+- **`previous_response_id`** ссылается на предыдущий ответ API. Копирую его из `response.id`, чтобы следующий запрос продолжил тот же обмен.
+
+Следующий ответ может содержать ещё один `function_call`. Когда модель присылает текстовые наблюдения по отрезку, приложение переходит к следующему. В каждом запросе внутри диалога мы заново передаём `instructions` и `tools`. Поле `previous_response_id` сохраняет связь с диалогом, а `instructions` действуют только на запрос, в котором переданы. [OpenAI — результаты вызовов](https://developers.openai.com/api/docs/guides/function-calling#handling-function-calls) · [Состояние разговора](https://developers.openai.com/api/docs/guides/conversation-state)
+
+### Источники
+
+- [OpenAI — Function calling](https://developers.openai.com/api/docs/guides/function-calling)
+- [OpenAI — изображения в Responses API](https://developers.openai.com/api/docs/guides/images-vision#analyze-images)
+- [Исходники OpenAI Node SDK — типы Responses API](https://github.com/openai/openai-node/blob/main/src/resources/responses/responses.ts)
+
+<section class="article-takeaway">
+
+## Главное
+
+1. Модель запрашивает кадры.
+2. Node.js исполняет запрос.
+3. Модель пишет геймдизайн-документ.
+
+</section>
