@@ -1,0 +1,57 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import { Locale } from '../i18n/Locale';
+import { locales, type LocaleCode } from '../i18n/locales';
+import About from '../views/about.astro';
+import Article from '../views/Article.astro';
+import Home from '../views/Home.astro';
+
+type ArticleEntry = CollectionEntry<'articles'>;
+type Props =
+	| { view: 'home'; articles: ArticleEntry[] }
+	| { view: 'about' }
+	| { view: 'article'; article: ArticleEntry; availableLocales: LocaleCode[] };
+
+export const getStaticPaths = (async () => {
+	const articles = await getCollection('articles', ({ data }) => !data.draft);
+	articles.sort((left, right) => right.data.pubDate.getTime() - left.data.pubDate.getTime()
+		|| left.data.translationKey.localeCompare(right.data.translationKey, 'en'));
+
+	const translations = new Map<string, Map<LocaleCode, ArticleEntry>>();
+	for (const article of articles) {
+		const { translationKey, locale } = article.data;
+		const group = translations.get(translationKey) ?? new Map<LocaleCode, ArticleEntry>();
+		if (group.has(locale)) throw new Error(`Duplicate article for ${locale}: ${translationKey}`);
+		group.set(locale, article);
+		translations.set(translationKey, group);
+	}
+
+	const pages: { params: { path: string | undefined }; props: Props }[] = [];
+	for (const { code } of locales) {
+		const locale = new Locale(code);
+		const localizedArticles = articles.filter(({ data }) => data.locale === code);
+		pages.push(
+			{ params: { path: locale.path('/').slice(1, -1) || undefined }, props: { view: 'home', articles: localizedArticles } },
+			{ params: { path: locale.path('/about').slice(1) }, props: { view: 'about' } },
+		);
+		for (const article of localizedArticles) {
+			const { translationKey } = article.data;
+			const group = translations.get(translationKey);
+			if (!group) throw new Error(`Missing article translations: ${translationKey}`);
+			pages.push({
+				params: { path: locale.path(`/articles/${translationKey}`).slice(1) },
+				props: { view: 'article', article, availableLocales: [...group.keys()] },
+			});
+		}
+	}
+	return pages;
+}) satisfies GetStaticPaths;
+
+const page = Astro.props;
+if (page.view === 'article') Astro.locals.availableLocales = page.availableLocales;
+---
+
+{page.view === 'home' && <Home articles={page.articles} />}
+{page.view === 'about' && <About />}
+{page.view === 'article' && <Article article={page.article} />}

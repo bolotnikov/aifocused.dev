@@ -1,0 +1,48 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import Footer from '../components/common/Footer.astro';
+import Header from '../components/common/Header.astro';
+import { Locale } from '../i18n/Locale';
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+	articles: CollectionEntry<'articles'>[];
+}
+
+const { articles } = Astro.props;
+const i18n = Locale.forPath(Astro.url.pathname);
+const t = i18n.t.bind(i18n);
+const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long', timeZone: 'UTC' });
+---
+
+<Layout>
+	<Header />
+	<main class="page-main page-main--home">
+		{articles.length > 0 && (
+			<section class="container" aria-labelledby="articles-title">
+				<h1 id="articles-title">{t('Articles')}</h1>
+				<div class="cards-grid">
+					{articles.map(({ data }) => (
+						<article class="article-card">
+							<a class="article-card__link" href={i18n.path(`/articles/${data.translationKey}/`)}>
+								<div class="article-card__media">
+									{data.cover
+										? <img src={data.cover.src} alt={data.cover.alt} loading="lazy" />
+										: <div class="article-card__media-fallback"></div>}
+								</div>
+								<div class="article-card__body">
+									<div class="article-card__meta">
+										<time datetime={data.pubDate.toISOString().slice(0, 10)}>{dateFormat.format(data.pubDate)}</time>
+									</div>
+									<h2>{data.title}</h2>
+									<p>{data.description}</p>
+								</div>
+							</a>
+						</article>
+					))}
+				</div>
+			</section>
+		)}
+	</main>
+	<Footer />
+</Layout>

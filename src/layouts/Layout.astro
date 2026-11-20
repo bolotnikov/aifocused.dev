@@ -1,0 +1,79 @@
+---
+import '../styles/global.css';
+import { Locale } from '../i18n/Locale';
+import { locales } from '../i18n/locales';
+const i18n = Locale.forPath(Astro.url.pathname);
+
+interface Props {
+	title?: string;
+	description?: string;
+	canonicalPath?: string;
+	image?: string | undefined;
+	ogType?: 'website' | 'article';
+}
+
+const {
+	title = 'AIFocused.dev',
+	description = i18n.t('Practical notes on AI engineering and workflows.'),
+	canonicalPath,
+	image,
+	ogType = 'website',
+} = Astro.props;
+
+const currentPath = i18n.path(canonicalPath ?? Astro.url.pathname);
+const availableLocales = Astro.locals.availableLocales ?? locales.map(({ code }) => code);
+const pageLocales = locales.filter(({ code }) => availableLocales.includes(code));
+const canonicalUrl = Astro.site ? new URL(currentPath, Astro.site).toString() : undefined;
+const imageUrl = image && Astro.site ? new URL(image, Astro.site).toString() : undefined;
+---
+
+<!doctype html>
+<html lang={i18n.code}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script is:inline>
+			(() => {
+				let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				try {
+					const saved = localStorage.getItem('aifocused:theme');
+					if (saved === 'dark' || saved === 'light') theme = saved;
+				} catch { /* The system preference works when storage is unavailable. */ }
+				document.documentElement.dataset.theme = theme;
+			})();
+		</script>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+			rel="stylesheet"
+		/>
+		<link rel="icon" type="image/jpeg" href="/ava2.jpg" />
+		<meta name="generator" content={Astro.generator} />
+		<meta name="description" content={description} />
+		{canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+		{pageLocales.map((language) => <link rel="alternate" hreflang={language.code} href={new URL(i18n.path(currentPath, language.code), Astro.site ?? Astro.url.origin)}/>)}
+		{availableLocales.includes('en') && <link rel="alternate" hreflang="x-default" href={new URL(i18n.path(currentPath, 'en'), Astro.site ?? Astro.url.origin)}/>}
+		<meta property="og:locale" content={i18n.dateLocale.replace('-', '_')}/>
+		{pageLocales.filter(({code})=>code!==i18n.code).map((language)=><meta property="og:locale:alternate" content={language.dateLocale.replace('-','_')}/>)}
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:type" content={ogType} />
+		{canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+		{imageUrl && <meta property="og:image" content={imageUrl} />}
+		<meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		{imageUrl && <meta name="twitter:image" content={imageUrl} />}
+		<title>{title}</title>
+	</head>
+	<body>
+		<slot />
+		<script>
+			import { ThemeController } from '../scripts/ThemeController';
+			import { LanguagePreferenceController } from '../scripts/LanguagePreferenceController';
+			new LanguagePreferenceController();
+			new ThemeController();
+		</script>
+	</body>
+</html>
