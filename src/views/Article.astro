@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { article } = Astro.props;
-const { title, subtitle, description, pubDate, cover } = article.data;
+const { title, subtitle, description, pubDate, cover, video } = article.data;
 const { Content, headings } = await render(article);
 const sections = headings.filter(({ depth }) => depth === 2);
 const i18n = Locale.forPath(Astro.url.pathname);
@@ -43,7 +43,22 @@ const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long',
 				</div>
 			)}
 			<div class="article-page__content">
-				{cover && <div class="article-page__hero"><img src={cover.src} alt={cover.alt} /></div>}
+				{video ? (
+					<iframe
+						id="video"
+						class="article-video"
+						src={`https://www.youtube-nocookie.com/embed/${video.youtubeId}`}
+						title={video.title}
+						width="560"
+						height="315"
+						loading="lazy"
+						referrerpolicy="strict-origin-when-cross-origin"
+						allow="encrypted-media; picture-in-picture"
+						allowfullscreen
+					></iframe>
+				) : cover && (
+					<div class="article-page__hero"><img src={cover.src} alt={cover.alt} /></div>
+				)}
 				<div class="article-prose">
 					<Content />
 				</div>
@@ -114,6 +129,16 @@ const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long',
 
 	.article-prose :global(h2[id]) {
 		scroll-margin-top: 1.5rem;
+	}
+
+	.article-video {
+		display: block;
+		inline-size: 100%;
+		block-size: auto;
+		min-block-size: 200px;
+		aspect-ratio: 16 / 9;
+		margin-block-end: clamp(1.5rem, 4vw, 3rem);
+		border: 0;
 	}
 
 	.article-page__subtitle {

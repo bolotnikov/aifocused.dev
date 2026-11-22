@@ -17,6 +17,10 @@ const articles = defineCollection({
 		pubDate: z.coerce.date(),
 		draft: z.boolean().default(false),
 		cover: articleImage.optional(),
+		video: z.object({
+			youtubeId: z.string().regex(/^[A-Za-z0-9_-]{11}$/),
+			title: z.string().min(1),
+		}).optional(),
 		preview: articleImage.optional(),
 	}),
 });
