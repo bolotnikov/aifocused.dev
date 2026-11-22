@@ -46,7 +46,7 @@ This is the API the application uses to talk to an OpenAI model. We create `clie
 
 </aside>
 
-`input` contains the task, `instructions` specifies the frame range and batch size, and `tools` describes the function. The `model` variable holds the model ID. The `getVideoFrames` definition follows below.
+`input` contains the task, `instructions` specifies the frame range and batch size, and `tools` describes the function. `model` is the ID of a model that supports image input and function calling. Define `getVideoFrames` as shown in the next section before sending the request.
 
 ```ts
 import OpenAI from 'openai';
@@ -57,8 +57,13 @@ const response = await client.responses.create({
 	input: 'Analyze the gameplay recording and write a game design document.',
 	instructions: '180 frames are available. Analyze frames 0–59 in batches of 12.',
 	tools: [getVideoFrames],
+	tool_choice: 'auto',
+	parallel_tool_calls: false,
+	store: true,
 });
 ```
+
+With `tool_choice: 'auto'`, the model can answer directly or request a tool. In this example, `parallel_tool_calls: false` allows at most one function call per response, and `store: true` saves the response so the app can continue the exchange using its ID. [OpenAI — tool choice](https://developers.openai.com/api/docs/guides/function-calling#tool-choice) · [API reference](https://developers.openai.com/api/reference/resources/responses/methods/create)
 
 ## Function arguments
 
@@ -84,15 +89,16 @@ const getVideoFrames = {
 
 `fromFrame` is the zero-based index of the first frame in the sample, and `count` is the number of consecutive frames to read. For example, `{ fromFrame: 12, count: 12 }` requests frames from `00:12` through `00:23`. The application processes one video at a time, so the function can work with just these two arguments.
 
-`strict: true` requires the arguments to match the schema. Before reading any frames, Node.js also checks that the requested index falls within the current segment.
+`strict: true` requires the arguments to match the schema. Before reading any frames, the app checks that the starting index exists in the sample and is within the current segment. If the requested batch extends past the segment boundary, the app returns the remaining frames in that segment.
 
 ## Matching a call to its result
 
-In the first API response, the model can return an item like this in `response.output`. The IDs here are illustrative.
+The model requests a tool by returning a `function_call` item in `response.output`. The item arrives in the response to the app's request. The IDs here are illustrative.
 
 ```json
 {
   "type": "function_call",
+  "id": "fc_first",
   "name": "get_video_frames",
   "call_id": "call_first",
   "arguments": "{\"fromFrame\":0,\"count\":12}"
@@ -117,7 +123,7 @@ const next = await client.responses.create({
 - **`call_id`** matches the result to a specific function call. Copy it from `function_call` into `function_call_output`.
 - **`previous_response_id`** refers to the preceding API response. Use `response.id` to continue the same conversation.
 
-The next response may contain another `function_call`. When the model returns written observations for the segment, the application moves on to the next one. We send `instructions` and `tools` again with each request in the conversation. `previous_response_id` links the requests, while `instructions` apply only to the request that includes them. [OpenAI — handling function calls](https://developers.openai.com/api/docs/guides/function-calling#handling-function-calls) · [Conversation state](https://developers.openai.com/api/docs/guides/conversation-state)
+Once the model has the tool result, it can answer the original request. If it needs more information or another action, it can request another call, and the app runs the tool and returns the result. [OpenAI — handling function calls](https://developers.openai.com/api/docs/guides/function-calling#handling-function-calls)
 
 ### Sources
 
@@ -129,8 +135,8 @@ The next response may contain another `function_call`. When the model returns wr
 
 ## Takeaways
 
-1. The model requests frames.
-2. Node.js runs the requested function.
-3. The model writes the game design document.
+1. Tool calling lets a model request data and actions from external systems.
+2. The model specifies the tool and its arguments. Code outside the model runs the tool and returns the result.
+3. The model uses the result to answer or request another tool call.
 
 </section>
