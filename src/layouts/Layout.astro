@@ -1,4 +1,5 @@
 ---
+import '@fontsource-variable/inter';
 import '../styles/global.css';
 import { Locale } from '../i18n/Locale';
 import { locales } from '../i18n/locales';
@@ -43,12 +44,6 @@ const imageUrl = image && Astro.site ? new URL(image, Astro.site).toString() : u
 				document.documentElement.dataset.theme = theme;
 			})();
 		</script>
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link
-			href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap"
-			rel="stylesheet"
-		/>
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
 		<meta name="generator" content={Astro.generator} />
