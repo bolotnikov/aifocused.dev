@@ -1,6 +1,11 @@
 {
   "AIFocused.dev": "AIFocused.dev",
   "About": "Об авторе",
+  "Allow analytics": "Разрешить аналитику",
+  "Analytics preferences": "Настройки аналитики",
+  "Google Analytics uses cookies to measure visits and page views. If you allow analytics, your browser shares usage data with Google. You can change your choice here at any time.": "Google Analytics использует файлы cookie для подсчёта посещений и просмотров. Если вы разрешите аналитику, браузер передаст данные о посещении в Google. Здесь можно изменить решение в любой момент.",
+  "How Google uses this data": "Как Google использует эти данные",
+  "Decline analytics": "Отклонить аналитику",
   "Articles": "Статьи",
   "Back to home": "На главную",
   "Contact": "Контакты",

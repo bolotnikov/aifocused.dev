@@ -1,6 +1,11 @@
 {
   "AIFocused.dev": "AIFocused.dev",
   "About": "About",
+  "Allow analytics": "Allow analytics",
+  "Analytics preferences": "Analytics preferences",
+  "Google Analytics uses cookies to measure visits and page views. If you allow analytics, your browser shares usage data with Google. You can change your choice here at any time.": "Google Analytics uses cookies to measure visits and page views. If you allow analytics, your browser shares usage data with Google. You can change your choice here at any time.",
+  "How Google uses this data": "How Google uses this data",
+  "Decline analytics": "Decline analytics",
   "Articles": "Articles",
   "Back to home": "Back to home",
   "Contact": "Contact",
