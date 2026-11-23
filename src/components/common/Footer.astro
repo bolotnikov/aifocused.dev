@@ -1,6 +1,5 @@
 ---
 import { Locale } from '../../i18n/Locale';
-import AnalyticsConsent from './AnalyticsConsent.astro';
 const i18n = Locale.forPath(Astro.url.pathname);
 const t = i18n.t.bind(i18n);
 ---
@@ -10,7 +9,6 @@ const t = i18n.t.bind(i18n);
 		<div class="footer-links">
 			<a href={i18n.path('/about/')}>{t('About')}</a>
 			<a href={`${i18n.path('/about/')}#contact`}>{t('Contact')}</a>
-			{import.meta.env.PROD && <AnalyticsConsent />}
 		</div>
 	</div>
 </footer>
