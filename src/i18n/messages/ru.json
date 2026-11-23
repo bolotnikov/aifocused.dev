@@ -12,7 +12,6 @@
   "Sections": "Разделы",
   "Switch color theme": "Переключить цветовую тему",
   "YouTube": "YouTube",
-  "Watch on YouTube": "Смотреть на YouTube",
   "about.blog.agents.description": "Как выстроить шаги, передавать контекст между ними и подключать внешние сервисы.",
   "about.blog.agents.title": "Агентные пайплайны",
   "about.blog.architecture.description": "Права доступа, подтверждение действий, evals, наблюдаемость и работа при сбоях провайдера.",

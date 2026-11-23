@@ -12,7 +12,6 @@
   "Sections": "Sections",
   "Switch color theme": "Switch color theme",
   "YouTube": "YouTube",
-  "Watch on YouTube": "Watch on YouTube",
   "about.blog.agents.description": "How to sequence tasks, pass context between steps, and integrate external services.",
   "about.blog.agents.title": "Agent workflows",
   "about.blog.architecture.description": "Access controls, human approval, evals, observability, and handling provider failures.",
