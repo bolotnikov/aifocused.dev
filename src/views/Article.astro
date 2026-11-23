@@ -44,15 +44,18 @@ const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long',
 			)}
 			<div class="article-page__content">
 				{video ? (
-					<a
+					<iframe
 						id="video"
 						class="article-video"
-						href={`https://www.youtube.com/watch?v=${video.youtubeId}`}
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						{i18n.t('Watch on YouTube')} · {video.title}
-					</a>
+						src={`https://www.youtube-nocookie.com/embed/${video.youtubeId}`}
+						title={video.title}
+						width="560"
+						height="315"
+						loading="lazy"
+						referrerpolicy="strict-origin-when-cross-origin"
+						allow="encrypted-media; picture-in-picture"
+						allowfullscreen
+					></iframe>
 				) : cover && (
 					<div class="article-page__hero"><img src={cover.src} alt={cover.alt} /></div>
 				)}
@@ -129,14 +132,13 @@ const dateFormat = new Intl.DateTimeFormat(i18n.dateLocale, { dateStyle: 'long',
 	}
 
 	.article-video {
-		display: inline-block;
+		display: block;
+		inline-size: 100%;
+		block-size: auto;
+		min-block-size: 200px;
+		aspect-ratio: 16 / 9;
 		margin-block-end: clamp(1.5rem, 4vw, 3rem);
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		background: var(--color-card);
-		color: var(--color-primary);
-		font-weight: 600;
+		border: 0;
 	}
 
 	.article-page__subtitle {
